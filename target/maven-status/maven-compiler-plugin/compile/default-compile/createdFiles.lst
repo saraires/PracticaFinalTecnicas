@@ -1,0 +1,6 @@
+com\mycompany\crudlogin\JakartaRestConfiguration.class
+Persistance\UsersRepository.class
+com\mycompany\crudlogin\SvLogin.class
+com\mycompany\crudlogin\resources\JakartaEE10Resource.class
+Entities\User.class
+com\mycompany\crudlogin\SvInformation.class
