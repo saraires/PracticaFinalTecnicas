@@ -12,13 +12,19 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.bson.Document;
 
 /**
  *
  * @author sarai
  */
 public class SvInformation extends HttpServlet {
+
+    private static final String SUCCESS_PAGE = "userInfo.jsp";
+    private static final String ERROR_PAGE = "userInfo.jsp";
+    private static final String TOAST_MESSAGE = "toastMessage";
+    private static final String TOAST_TYPE = "toastType";
+
+    private final UsersRepository userRepo = new UsersRepository();
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
@@ -46,9 +52,6 @@ public class SvInformation extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        RequestDispatcher dispatcher;
-
         try {
 
             // Campos a updatear
@@ -59,29 +62,33 @@ public class SvInformation extends HttpServlet {
             String username = request.getParameter("username");
             String email = request.getParameter("email");
 
-            UsersRepository userRepo = new UsersRepository();
             String id = userRepo.getUserID(username);
 
             userRepo.updateUser(id, name, password);
 
-            request.setAttribute("user", new User(
-                    name,
-                    email,
-                    username,
-                    password
-            ));
-          
-            request.setAttribute("toastMessage", "User successfully updated!");
-            request.setAttribute("toastType", "success");
-            dispatcher = request.getRequestDispatcher("userInfo.jsp");
-            dispatcher.forward(request, response);
+            User updatedUser = new User(name, email, username, password);
+            request.setAttribute("user", updatedUser);
 
-        } catch (IOException e) {
-            request.setAttribute("toastMessage", "We couldn't update your user, try again D:");
-            request.setAttribute("toastType", "error");
-            dispatcher = request.getRequestDispatcher("userInfo.jsp");
-            dispatcher.forward(request, response);
+            sendSuccess(request, response, "User successfully updated!");
+
+        } catch (IllegalArgumentException e) {
+            sendError(request, response, "We couldn't update your user, try again D:");
         }
+    }
+
+    private void sendSuccess(HttpServletRequest request, HttpServletResponse response, String message) throws ServletException, IOException {
+        sendResponse(request, response, message, "success", SUCCESS_PAGE);
+    }
+
+    private void sendError(HttpServletRequest request, HttpServletResponse response, String message) throws ServletException, IOException {
+        sendResponse(request, response, message, "error", ERROR_PAGE);
+    }
+
+    private void sendResponse(HttpServletRequest request, HttpServletResponse response, String message, String type, String page) throws ServletException, IOException {
+        request.setAttribute(TOAST_MESSAGE, message);
+        request.setAttribute(TOAST_TYPE, type);
+        RequestDispatcher dispatcher = request.getRequestDispatcher(page);
+        dispatcher.forward(request, response);
     }
 
     /**

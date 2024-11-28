@@ -13,7 +13,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 
 /**
  *
@@ -21,7 +20,12 @@ import org.bson.types.ObjectId;
  */
 public class SvLogin extends HttpServlet {
 
-    RequestDispatcher dispatcher;
+    private static final String ERROR_MESSAGE = "toastMessage";
+    private static final String ERROR_TYPE = "toastType";
+    private static final String ERROR_PAGE = "index.jsp";
+    private static final String SUCCESS_PAGE = "userInfo.jsp";
+
+    private final UsersRepository userRepo = new UsersRepository();
 
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
@@ -54,9 +58,10 @@ public class SvLogin extends HttpServlet {
 
         if (signUp != null) {
             handleSignUp(request, response);
-        }
-        if (login != null) {
+        } else if (login != null) {
             handleLogin(request, response);
+        } else {
+            sendError(request, response, "Invalid action! D:", "error");
         }
 
     }
@@ -70,27 +75,21 @@ public class SvLogin extends HttpServlet {
             String confirmPassword = request.getParameter("confirmPass");
 
             if (!password.equals(confirmPassword)) {
-                throw new IllegalArgumentException("Passwords do not match! D:");
+                sendError(request, response, "Passwords do not match! D:", "error");
             }
 
-            UsersRepository userRepo = new UsersRepository();
             if (userRepo.getUserID(email) != null || userRepo.getUserID(username) != null) {
-                throw new IllegalArgumentException("Email or username already exists! D:");
+                sendError(request, response, "Email or username already exists! D:", "error");
             }
 
             User newUser = new User(name, email, username, password);
             userRepo.addUser(newUser);
 
             request.setAttribute("user", newUser);
-            dispatcher = request.getRequestDispatcher("userInfo.jsp");
-            dispatcher.forward(request, response);
+            forwardToPage(request, response, SUCCESS_PAGE);
 
         } catch (IllegalArgumentException e) {
-
-            request.setAttribute("toastMessage", "El correo y/o usuario ya estan registrados, intenta otros");
-            request.setAttribute("toastType", "error");
-            dispatcher = request.getRequestDispatcher("index.jsp");
-            dispatcher.forward(request, response);
+            sendError(request, response, "Email or username already exists!", "error");
         }
     }
 
@@ -99,35 +98,36 @@ public class SvLogin extends HttpServlet {
             String loginUser = request.getParameter("loginUser");
             String password = request.getParameter("pass");
 
-            UsersRepository userRepo = new UsersRepository();
             Document user = userRepo.login(loginUser, password);
 
-            if (user.getObjectId("_id") == null) {
-                throw new IllegalArgumentException("Invalid email/username or password!");
+            if (user == null || user.getObjectId("_id") == null) {
+                sendError(request, response, "Invalid email/username or password!", "error");
             }
 
-            request.setAttribute("user", new User(
+            User loggedUser = new User(
                     user.getString("fullname"),
                     user.getString("email"),
                     user.getString("username"),
                     user.getString("password")
-            ));
-            System.out.println("Usuario: " + user);
-            dispatcher = request.getRequestDispatcher("userInfo.jsp");
-            dispatcher.forward(request, response);
+            );
+
+            request.setAttribute("user", loggedUser);
+            forwardToPage(request, response, SUCCESS_PAGE);
 
         } catch (IllegalArgumentException e) {
-            request.setAttribute("toastMessage", "IllegalArgumentException");
-            request.setAttribute("toastType", "error");
-            dispatcher = request.getRequestDispatcher("index.jsp");
-            dispatcher.forward(request, response);
-        } catch (ServletException e) {
-            request.setAttribute("toastMessage", "ServletException");
-            request.setAttribute("toastType", "error");
-        } catch (IOException e) {
-            request.setAttribute("toastMessage", "IOException");
-            request.setAttribute("toastType", "error");
+            sendError(request, response, "Invalid username/email or password!", "error");
         }
+    }
+
+    private void forwardToPage(HttpServletRequest request, HttpServletResponse response, String page) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher(page);
+        dispatcher.forward(request, response);
+    }
+
+    private void sendError(HttpServletRequest request, HttpServletResponse response, String message, String type) throws ServletException, IOException {
+        request.setAttribute(ERROR_MESSAGE, message);
+        request.setAttribute(ERROR_TYPE, type);
+        forwardToPage(request, response, ERROR_PAGE);
     }
 
     /**

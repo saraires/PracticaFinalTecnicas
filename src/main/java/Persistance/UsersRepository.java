@@ -32,18 +32,6 @@ public class UsersRepository {
         userCollection = dataBase.getCollection("User");
     }
 
-    // Read all Users
-    public List<User> getUsers() {
-        FindIterable<Document> documents = userCollection.find();
-        List<User> users = new ArrayList<>();
-
-        for (Document doc : documents) {
-            users.add(User.fromDocument(doc));
-        }
-
-        return users;
-    }
-
     public Document login(String user, String pass) {
 
         var filter = Filters.and(
@@ -91,11 +79,5 @@ public class UsersRepository {
                 set("password", pass))
         );
         System.out.println("User update: " + name + "pass: " + pass);
-    }
-
-    // Delete User (In case if we use an administrator role)
-    public void deleteUser(int id) {
-        userCollection.deleteOne(Filters.eq("id", id));
-        System.out.println("Product deleted: " + id);
     }
 }

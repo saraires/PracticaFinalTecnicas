@@ -76,14 +76,4 @@ public class User {
                 .append("username", username)
                 .append("password", password);
     }
-
-    // Static Methods
-    public static User fromDocument(Document doc) {
-        return new User(
-                doc.getString("fullname"),
-                doc.getString("email"),
-                doc.getString("username"),
-                doc.getString("password")
-        );
-    }
 }

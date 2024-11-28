@@ -33,7 +33,7 @@
             <div class="login">
                 <form action="SvLogin" method="post">
                     <label for="chk" aria-hidden="true">Login</label>
-                    <input type="email" name="loginUser" placeholder="Email" required="">
+                    <input type="text" name="loginUser" placeholder="Email" required="">
                     <input type="password" name="pass" placeholder="Password" required="">
                     <button name="login">Login</button>
                 </form>
